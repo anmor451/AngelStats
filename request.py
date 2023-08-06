@@ -18,7 +18,7 @@ def get_game(game_id):
     elif response.status_code == 200:
         return response.json()
     else:
-        print("Unknown Error")
+        print(response.status_code)
         return None
 
 

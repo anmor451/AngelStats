@@ -6,6 +6,8 @@ from request import get_game
 from Joueur import Joueur
 from Team import Team
 
+HISTORIQUE_GAMES = []
+
 def calculer_winrate(win, lose):
     return round(win / (win + lose) * 100, 2)
 
@@ -22,8 +24,18 @@ def run():
         connexion = await aiosqlite.connect('Players.db')
         cursor = await connexion.cursor()
 
+        if ctx.channel.id != settings.CHANNEL_ID:
+            print('Ce n\'est pas le bon channel')
+            await ctx.channel.purge(limit=1)
+            return
+
+        if game_id in HISTORIQUE_GAMES:
+            await ctx.send('Cette game a déjà été ajoutée')
+            return
+        
+        HISTORIQUE_GAMES.append(game_id)
+
         game_dict = get_game(game_id)
-                
         for participants in game_dict['info']['participants']:
             if participants['summonerName'] in team.members:
                 summoner_name = participants['summonerName']
@@ -50,7 +62,6 @@ def run():
                     await connexion.commit()
                     print(f'Added {summoner_name} to the database, kill: {kill}, death: {death}, assist: {assist}, kda: {joueur.kda}, champions: {joueur.champions}')
 
-        print(win)
         if win is not None:
             team.update_score(win)
         
@@ -64,9 +75,14 @@ def run():
 
     @bot.command()
     async def show_stats(ctx):
+        if ctx.channel.id != settings.BOT_COMMAND_CHANNEL_ID:
+            return
+        channel = bot.get_channel(settings.STATS_CHANNEL_ID)
         message = "Voici les stats des anges !! \n"
         connexion = await aiosqlite.connect('Players.db')
         cursor = await connexion.cursor()
+
+        await channel.purge(limit=1)
 
         await cursor.execute("""SELECT * FROM games""")
         game = await cursor.fetchone()
@@ -76,9 +92,9 @@ def run():
         players = await cursor.fetchall()
         for player in players:
             message += '------------------------' + '\n'
-            message += f'{player[0]} : kills = {player[1]}, deaths = {player[2]}, assists = {player[3]}, \n\tkda = {player[4]}, champions jouées = {player[5]}\n'
+            message += f'{player[0]} / kills : {player[1]}/ deaths = {player[2]}/ assists = {player[3]}/ \n\tkda = {player[4]}/ champions jouées = {player[5]}\n'
 
-        await ctx.send(message)
+        await channel.send(message)
 
 
     @bot.event
