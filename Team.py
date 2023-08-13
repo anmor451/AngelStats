@@ -3,7 +3,7 @@ class Team:
         self.win = 0
         self.lose = 0
         self.winrate = 0
-        self.members = ['Daisoujou']
+        self.members = ['SacFeve']
 
     def calculer_winrate(self):
         self.winrate = round(self.win / (self.win + self.lose), 2)

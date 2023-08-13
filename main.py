@@ -44,23 +44,30 @@ def run():
                 assist = participants['assists']
                 champion = participants['championName']
                 win = participants['win']
+                print(f'{summoner_name} : {kill} / {death} / {assist} / {champion} / win = {win}')
 
                 if await exists_in_database(summoner_name):
                     await cursor.execute("""SELECT * FROM players WHERE summoner_name = ?""", (summoner_name,))
                     player = await cursor.fetchone()
-                    joueur = Joueur(player[0], player[1], player[2], player[3], player[5])
-                    joueur.ajouter_stats(kill, death, assist)
+                    joueur = Joueur(player[0], player[1], player[2], player[3], player[5], player[6], player[7])
+                    joueur.ajouter_stats(kill, death, assist, win)
                     joueur.ajouter_champion(champion)
-
-                    await cursor.execute("""UPDATE players SET kill = ?, death = ?, assist = ?, kda = ?, champions = ? WHERE summoner_name = ?""",
-                                          (joueur.kill, joueur.death, joueur.assist, joueur.kda, ' ,'. join(champ for champ in joueur.champions), joueur.summoner_name))
+                    print(joueur)
+                    await cursor.execute("""UPDATE players SET kill = ?, death = ?, assist = ?, kda = ?, win = ?, lose = ?, champions = ? WHERE summoner_name = ?""",
+                                          (joueur.kill, joueur.death, joueur.assist, joueur.kda, joueur.win, joueur.lose, ', '. join(champ for champ in joueur.champions), joueur.summoner_name))
                     await connexion.commit()
                     print(joueur)
                 else:
-                    joueur = Joueur(summoner_name, kill, death, assist, champion)
-                    await cursor.execute("""INSERT INTO players VALUES (?, ?, ?, ?, ?, ?)""", (joueur.summoner_name, joueur.kill, joueur.death, joueur.assist, joueur.kda, ' ,'. join(champ for champ in joueur.champions)))
+                    real_win = 0
+                    real_lose = 0
+                    if win:
+                        real_win = 1
+                    else:
+                        real_lose.lose += 1
+                    joueur = Joueur(summoner_name, kill, death, assist, real_win, real_lose, champion)
+                    await cursor.execute("""INSERT INTO players VALUES (?, ?, ?, ?, ?, ?, ?, ?)""", (joueur.summoner_name, joueur.kill, joueur.death, joueur.assist, joueur.kda, joueur.win, joueur.lose, ', '. join(champ for champ in joueur.champions)))
                     await connexion.commit()
-                    print(f'Added {summoner_name} to the database, kill: {kill}, death: {death}, assist: {assist}, kda: {joueur.kda}, champions: {joueur.champions}')
+                    print(f'Added {summoner_name} to the database, kill: {kill}, death: {death}, assist: {assist}, kda: {joueur.kda}, win: {joueur.win}, lose: {joueur.lose} champions: {joueur.champions}')
 
         if win is not None:
             team.update_score(win)
@@ -92,7 +99,7 @@ def run():
         players = await cursor.fetchall()
         for player in players:
             message += '------------------------' + '\n'
-            message += f'{player[0]} / kills : {player[1]}/ deaths = {player[2]}/ assists = {player[3]}/ \n\tkda = {player[4]}/ champions jouées = {player[5]}\n'
+            message += f'{player[0]} / kills : {player[1]} / deaths = {player[2]} / assists = {player[3]} / \nkda = {player[4]} / win = {player[5]} / lose = {player[6]} \n champions jouées = {player[7]}\n'
 
         await channel.send(message)
 
@@ -104,7 +111,7 @@ def run():
         bot.db = await aiosqlite.connect('Players.db')
         cursor = await bot.db.cursor()
 
-        await cursor.execute("""CREATE TABLE IF NOT EXISTS players (summoner_name text, kill int, death int, assist int, kda float, champions text)""")
+        await cursor.execute("""CREATE TABLE IF NOT EXISTS players (summoner_name text, kill int, death int, assist int, kda float, win int, lose int, champions text)""")
         await bot.db.commit()
 
         await cursor.execute(""" CREATE TABLE IF NOT EXISTS games (win int, lose int, winrate float)""")

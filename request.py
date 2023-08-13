@@ -5,6 +5,7 @@ url = "https://americas.api.riotgames.com/lol/match/v5/matches/"
 
 def get_game(game_id):
     response = requests.get(url + 'NA1_' + game_id + "?api_key=" + settings.RIOT_TOKEN)
+    print(response)
 
     if response.status_code == 401:
         print("Unauthorized")
