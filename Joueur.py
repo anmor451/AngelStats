@@ -1,6 +1,6 @@
 class Joueur:
     
-    def __init__(self, summoner_name, kill, death, assist, win, lose, champion):
+    def __init__(self, summoner_name, kill, death, assist, win, lose, champion, jouer=0):
         self.summoner_name = summoner_name
         self.kill = kill
         self.death = death
@@ -10,6 +10,7 @@ class Joueur:
         self.champions.append(champion)
         self.win = win
         self.lose = lose
+        self.jouer = int(jouer) + 1
 
     def calculer_kda(self):
         self.kda = round((self.kill + self.assist) / self.death, 2)

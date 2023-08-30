@@ -17,6 +17,7 @@ def get_game(game_id):
         print("Internal Server Error")
         return None
     elif response.status_code == 200:
+        print("Success")
         return response.json()
     else:
         print(response.status_code)
